@@ -1,0 +1,38 @@
+<?xml version="1.0"?>
+<robot xmlns:xacro="http://www.ros.org/wiki/xacro" name="chassis_part">
+
+  <xacro:include filename="$(find robot_description)/urdf/diff_terrain/constants.xacro"/>
+
+  <xacro:property name="frame_mesh" value="file://$(find robot_description)/meshes/robot_frame.dae"/>
+  <xacro:property name="file_scale"         value="1.0 1.0 1.0" />  <!-- The STL file is in millimeters -->
+
+  <link name="chassis">
+    <visual>
+      <geometry>
+        <mesh
+          filename="${frame_mesh}"
+          scale="${file_scale}"/>      
+        </geometry>
+    </visual>
+    <collision>
+      <origin xyz="0 0 -0.025" rpy="0 0 0"/>
+
+      <geometry>
+        <box size="${chassis_length} ${chassis_width} 0.05"/>
+      </geometry>
+    </collision>
+    <inertial>
+      <mass value="15.0"/>
+      <inertia ixx="0.1" ixy="0.0" ixz="0.0"
+               iyy="0.1" iyz="0.0"
+               izz="0.1"/>
+    </inertial>
+  </link>
+
+  <joint name="chassis_joint" type="fixed">
+    <parent link="base_link"/>
+    <child link="chassis"/>
+    <origin xyz="0 0 ${chassis_lvl_1}" rpy="0 0 0"/>
+  </joint>
+
+</robot>

@@ -1,0 +1,27 @@
+controller_server:
+  ros__parameters:
+
+    diff_drive:
+      enabled: true
+      wheel_radius: 0.0625 
+      wheelbase: 0.25
+      left: 0
+      right: 1
+      max_motor_speed: 0.7
+
+sensor_server:
+  ros__parameters:
+    sensor:
+      sensor_offset_back: 0.10
+      sensor_offset_back_right: 0.0
+      sensor_offset_back_left: 0.0
+      sensor_offset_front: 0.10
+      sensor_offset_left: 0.10
+      sensor_offset_right: 0.10
+      # Ultrasonic
+      baseline_distance: 0.25
+      # Lidar
+      left_ang:  180
+      right_ang: 5
+      front_ang: 93
+

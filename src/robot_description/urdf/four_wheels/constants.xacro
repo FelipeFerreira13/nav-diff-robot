@@ -1,0 +1,16 @@
+<?xml version="1.0"?>
+<robot xmlns:xacro="http://www.ros.org/wiki/xacro" name="constants">
+
+  <xacro:property name="chassis_length" value="0.40"/>
+  <xacro:property name="chassis_width" value="0.28"/>
+  <xacro:property name="chassis_height" value="0.1"/>
+
+  <xacro:property name="wheel_radius" value="0.0625"/>
+  <xacro:property name="wheel_thickness" value="0.05"/>
+  <xacro:property name="wheel_separation_x" value="0.29"/> 
+  <xacro:property name="wheel_separation_y" value="0.35"/> 
+  <!-- <xacro:property name="wheel_separation_y" value="${(chassis_width / 2) + (wheel_thickness / 2)}"/>  -->
+
+
+
+</robot>

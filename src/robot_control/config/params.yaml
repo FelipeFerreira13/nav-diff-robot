@@ -1,0 +1,25 @@
+controller_node:
+  ros__parameters:
+
+    diff_drive:
+      enabled: false
+      name: "diff_drive"
+      ticks_per_rotation: 1464
+      wheel_radius: 0.0625 
+      robot_radius: 0.2 
+      left:  0
+      right: 1
+      invert_left: true
+      invert_right: false
+      pi:
+        p: 1.0
+        i: 0.1
+        d: 0.0
+        i_max: 0.1
+        i_min: 0.1
+
+      
+
+    mecanum_drive:
+      enabled: false
+      name: "mecanum_drive"

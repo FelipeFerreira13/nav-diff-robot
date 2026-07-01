@@ -32,7 +32,6 @@ rosidl_generate_interfaces(${PROJECT_NAME}
   "srv/SetSpeed.srv"
   "srv/GetEncoder.srv"
   "srv/Pid.srv"
-  DEPENDENCIES
 )
 
 # Get the interface library and then link it
@@ -152,7 +151,7 @@ install(
 )
 
 install(
-  DIRECTORY
+  DIRECTORY launch config
   DESTINATION share/${PROJECT_NAME}
 )
 
@@ -171,12 +170,12 @@ ament_export_dependencies(
   geometry_msgs
   nav_msgs
   std_srvs
-  sensor_msgs
   tf2
   tf2_ros
   tf2_geometry_msgs
   utils
   control_toolbox
+  rosidl_default_runtime
 )
 
 # Marks the end of the package configuration; performs finalization needed by ROS 2 packages.

@@ -6,4 +6,3 @@ InitializeParams initparams
 ---
 bool success
 string message
-int32 enc_count

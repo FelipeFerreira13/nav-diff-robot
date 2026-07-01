@@ -1,74 +1,106 @@
-
 from launch import LaunchDescription
 from launch_ros.actions import Node
 from ament_index_python.packages import get_package_share_directory
-from launch.actions import ExecuteProcess
+from launch.actions import ExecuteProcess, IncludeLaunchDescription, DeclareLaunchArgument
+from launch.launch_description_sources import PythonLaunchDescriptionSource
 from launch.substitutions import LaunchConfiguration
-
+from launch_ros.parameter_descriptions import ParameterValue
 
 import os
-import time
-import yaml
+
 
 def generate_launch_description():
 
-    use_sim_time = True
-    params_file = "/home/robot/ROS2/nav2_params/nav2_params.yaml"
-    map_file = '/home/robot/ROS2/src/robot_core/maps/unknown_maze.yaml'
+    params_file = "/home/vmx/nav-diff-robot/nav2_params/nav2_params.yaml"
+    map_file = "/home/vmx/nav-diff-robot/src/robot_core/maps/empty.yaml"
 
-    base_tf = ExecuteProcess(
-        cmd=[[
-            'ros2 run tf2_ros static_transform_publisher 0 0 0 0 0 0 base_footprint base_link'
-        ]],
-        shell=True
+    description_pkg = get_package_share_directory("robot_description")
+    control_pkg = get_package_share_directory("robot_control")
+    nav2_bringup_dir = get_package_share_directory("nav2_bringup")
+
+    use_sim_time = LaunchConfiguration("use_sim_time")
+
+    sim_arg = DeclareLaunchArgument(
+        "use_sim_time",
+        default_value="false",
+        description="Use simulation clock if true"
+    )
+
+    robot_control = IncludeLaunchDescription(
+        PythonLaunchDescriptionSource(
+            os.path.join(
+                control_pkg,
+                "launch",
+                "control.launch.py"
+            )
+        ),
+    )
+
+    robot_description = IncludeLaunchDescription(
+        PythonLaunchDescriptionSource(
+            os.path.join(
+                description_pkg,
+                "launch",
+                "robot_description.launch.py"
+            )
+        ),
+        launch_arguments={
+            "use_sim_time": use_sim_time
+        }.items()
     )
 
     map_tf = ExecuteProcess(
-        cmd=[[
-            'ros2 run tf2_ros static_transform_publisher 0 0 0 0 0 0 map odom'
-        ]],
-        shell=True
+        cmd=[
+            "ros2", "run", "tf2_ros", "static_transform_publisher",
+            "0", "0", "0", "0", "0", "0",
+            "map", "odom"
+        ],
+        output="screen"
     )
 
-
     map_server = Node(
-        package='nav2_map_server',
-        executable='map_server',
-        name='map_server',
-        output='screen',
+        package="nav2_map_server",
+        executable="map_server",
+        name="map_server",
+        output="screen",
         parameters=[{
-            'yaml_filename': map_file,
-            'use_sim_time': use_sim_time
+            "yaml_filename": map_file,
+            "use_sim_time": ParameterValue(use_sim_time, value_type=bool)
         }]
     )
 
     lifecycle_manager = Node(
-        package='nav2_lifecycle_manager',
-        executable='lifecycle_manager',
-        name='lifecycle_manager',
-        output='screen',
+        package="nav2_lifecycle_manager",
+        executable="lifecycle_manager",
+        name="lifecycle_manager",
+        output="screen",
         parameters=[{
-            'use_sim_time': use_sim_time,
-            'autostart': True,
-            'node_names': ['map_server']
+            "use_sim_time": ParameterValue(use_sim_time, value_type=bool),
+            "autostart": True,
+            "node_names": ["map_server"]
         }]
     )
 
-
-    navigation = ExecuteProcess(
-        cmd=['ros2', 'launch', 'nav2_bringup', 'navigation_launch.py', 
-             f'use_sim_time:={use_sim_time}', 
-             f'params_file:={params_file}'
-             ],
-        output='screen'
+    navigation = IncludeLaunchDescription(
+        PythonLaunchDescriptionSource(
+            os.path.join(
+                nav2_bringup_dir,
+                "launch",
+                "navigation_launch.py"
+            )
+        ),
+        launch_arguments={
+            "use_sim_time": use_sim_time,
+            "params_file": params_file
+        }.items()
     )
 
-    nodes = [
-        # base_tf,
+    return LaunchDescription([
+        robot_control,
+        sim_arg,
+        robot_description,
         map_tf,
         map_server,
         lifecycle_manager,
         navigation,
-    ]
-
-    return LaunchDescription(nodes)
+    ])

@@ -4,8 +4,6 @@
   <!-- Include constants and parts -->
   <xacro:include filename="constants.xacro"/>
   <xacro:include filename="chassis.xacro"/>
-  <xacro:include filename="gazebo_control.xacro"/>
-  <xacro:include filename="ros2_control.xacro"/>
   <xacro:include filename="$(find robot_description)/urdf/constants.xacro"/>
   <xacro:include filename="$(find robot_description)/urdf/base_link.xacro"/>
   <xacro:include filename="$(find robot_description)/urdf/wheel.xacro"/>
@@ -13,7 +11,7 @@
 
   
   <!-- Set Laser -->
-  <xacro:laser_part parent_link="base_link" joint_name="front_laser_joint" xyz="0.15 0 ${chassis_height + (laser_length/2) + wheel_radius}" rpy="0 0 1.5708"/>
+  <xacro:laser_part parent_link="base_link" joint_name="front_laser_joint" xyz="0.15 0 ${chassis_height + (laser_length/2) + wheel_radius}" rpy="0 0 0"/>
 
   <!-- Create wheels -->
   <xacro:wheel_macro name="rear_left_wheel"   parent="base_link" xyz="-${wheel_separation_x/2}  ${wheel_separation_y/2} ${wheel_radius}" rpy="1.5708 0 0"/>

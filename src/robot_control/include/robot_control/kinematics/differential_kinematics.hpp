@@ -8,8 +8,11 @@
 #include "geometry_msgs/msg/twist.hpp"
 
 struct DifferentialSpeeds {
-    double left;  
-    double right; 
+    double front_left;  
+    double front_right; 
+    double rear_left; 
+    double rear_right; 
+
 };
 
 class DifferentialKimematics {
@@ -22,8 +25,10 @@ public:
 
     double WheelSpeed( int encoder, double time );
 
-    int l_ = 0;
-    int r_ = 1;
+    int fl_ = 0;
+    int fr_ = 0;
+    int rl_ = 0;
+    int rr_ = 1;
 
     double max_motor_speed_ = 0.7;
 

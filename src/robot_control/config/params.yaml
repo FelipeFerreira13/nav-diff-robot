@@ -4,11 +4,14 @@ controller_node:
     diff_drive:
       enabled: false
       name: "diff_drive"
+      max_motor_speed: 0.7
       ticks_per_rotation: 1464
-      wheel_radius: 0.0625 
-      robot_radius: 0.2 
-      left:  0
-      right: 1
+      wheel_radius: 0.0625
+      robot_radius: 0.2
+      front_left: 1
+      front_right: 3
+      rear_left: 0
+      rear_right: 2
       invert_left: true
       invert_right: false
       pi:
@@ -17,8 +20,6 @@ controller_node:
         d: 0.0
         i_max: 0.1
         i_min: 0.1
-
-      
 
     mecanum_drive:
       enabled: false

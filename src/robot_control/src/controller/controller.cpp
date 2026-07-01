@@ -1,21 +1,46 @@
 #include "robot_control/controller/controller.hpp"
 
 Controller::Controller() : 
-    Node("controller_server") {
+    Node("controller_node") {
 
     this->declare_parameter<bool> ("diff_drive.enabled", false);
     this->declare_parameter<float>("diff_drive.wheel_radius",0);
-    this->declare_parameter<float>("diff_drive.wheelbase",0);
-    this->declare_parameter<int>("diff_drive.left",0);
-    this->declare_parameter<int>("diff_drive.right",0);
+    this->declare_parameter<float>("diff_drive.robot_radius",0);
+    this->declare_parameter<int>("diff_drive.front_left",0);
+    this->declare_parameter<int>("diff_drive.front_right",0);
+    this->declare_parameter<int>("diff_drive.rear_left",0);
+    this->declare_parameter<int>("diff_drive.rear_right",0);
     this->declare_parameter<float>("diff_drive.max_motor_speed",0);
 
     bool diff_drive_enabled = this->get_parameter("diff_drive.enabled" ).as_bool();
     differential_kim.R = this->get_parameter("diff_drive.wheel_radius" ).as_double();
-    differential_kim.L = this->get_parameter("diff_drive.wheelbase" ).as_double();
-    differential_kim.l_ = this->get_parameter("diff_drive.left" ).as_int();
-    differential_kim.r_ = this->get_parameter("diff_drive.right" ).as_int();
+    differential_kim.L = this->get_parameter("diff_drive.robot_radius" ).as_double() * 2;
+    differential_kim.fl_ = this->get_parameter("diff_drive.front_left" ).as_int();
+    differential_kim.fr_ = this->get_parameter("diff_drive.front_right" ).as_int();
+    differential_kim.rl_ = this->get_parameter("diff_drive.rear_left" ).as_int();
+    differential_kim.rr_ = this->get_parameter("diff_drive.rear_right" ).as_int();
     differential_kim.max_motor_speed_ = this->get_parameter("diff_drive.max_motor_speed" ).as_double();
+
+    RCLCPP_INFO_ONCE(
+        this->get_logger(),
+        "Diff Drive Parameters:\n"
+        "  enabled: %s\n"
+        "  wheel_radius R: %.4f\n"
+        "  wheel_base L: %.4f\n"
+        "  front_left: %d\n"
+        "  front_right: %d\n"
+        "  rear_left: %d\n"
+        "  rear_right: %d\n"
+        "  max_motor_speed: %.4f",
+        diff_drive_enabled ? "true" : "false",
+        differential_kim.R,
+        differential_kim.L,
+        differential_kim.fl_,
+        differential_kim.fr_,
+        differential_kim.rl_,
+        differential_kim.rr_,
+        differential_kim.max_motor_speed_
+    );
 
 
 
@@ -58,11 +83,11 @@ void Controller::cmdVelCallback(const geometry_msgs::msg::Twist::SharedPtr msg) 
     double dt = current_time - previous_time_cmd;
     previous_time_cmd = current_time;
 
-    RCLCPP_INFO(this->get_logger(), "dvx=%.3f dvy=%.3f dvth=%.2f cvx=%.3f cvy=%.3f cvth=%.2f dt=%.2f", 
-        msg->linear.x, msg->linear.y, msg->angular.z, 
-        robot_twist.linear.x, robot_twist.linear.y, robot_twist.angular.z,
-        dt
-    );
+    // RCLCPP_INFO(this->get_logger(), "dvx=%.3f dvy=%.3f dvth=%.2f cvx=%.3f cvy=%.3f cvth=%.2f dt=%.2f", 
+    //     msg->linear.x, msg->linear.y, msg->angular.z, 
+    //     robot_twist.linear.x, robot_twist.linear.y, robot_twist.angular.z,
+    //     dt
+    // );
 
     if (dt < 0.0001 || dt > 0.5) return;
 
@@ -77,30 +102,46 @@ void Controller::cmdVelCallback(const geometry_msgs::msg::Twist::SharedPtr msg) 
 
     DifferentialSpeeds wheel_vels = differential_kim.inverse(twist);
 
-    int l_ = differential_kim.l_;
-    int r_ = differential_kim.r_;
+    int fl_ = differential_kim.fl_;
+    int fr_ = differential_kim.fr_;
+    int rl_ = differential_kim.rl_;
+    int rr_ = differential_kim.rr_;
 
-    double error_l = wheel_vels.left  - differential_vel.left;
-    double error_r = wheel_vels.right - differential_vel.right;
+    double error_fl = wheel_vels.front_left  - differential_vel.front_left;
+    double error_fr = wheel_vels.front_right - differential_vel.front_right;
+    double error_rl = wheel_vels.rear_left  - differential_vel.rear_left;
+    double error_rr = wheel_vels.rear_right - differential_vel.rear_right;
 
-    wheels_cmd[l_] = pid_wheels[l_].computeCommand( error_l, (uint64_t )(dt * 1e9) );
-    wheels_cmd[r_] = pid_wheels[r_].computeCommand( error_r, (uint64_t )(dt * 1e9) );
+    wheels_cmd[fl_] = pid_wheels[fl_].computeCommand( error_fl, (uint64_t)(dt * 1e9) );
+    wheels_cmd[fr_] = pid_wheels[fr_].computeCommand( error_fr, (uint64_t)(dt * 1e9) );
+    wheels_cmd[rl_] = pid_wheels[rl_].computeCommand( error_rl, (uint64_t)(dt * 1e9) );
+    wheels_cmd[rr_] = pid_wheels[rr_].computeCommand( error_rr, (uint64_t)(dt * 1e9) );
 
     if( stop_motors ){ 
-        wheels_cmd[l_] = 0;
-        wheels_cmd[r_] = 0;
+        wheels_cmd[fl_] = 0;
+        wheels_cmd[fr_] = 0;
+        wheels_cmd[rl_] = 0;
+        wheels_cmd[rr_] = 0;
     }
     
     auto wheels = std::make_shared<robot_control::srv::SetSpeed::Request>();
 
-    // RCLCPP_INFO(this->get_logger(), "dl=%.3f cl=%.3f pid=%.2f dt=%.2f", wheel_vels.left, differential_vel.left, wheels_cmd[l_], dt);
+    // RCLCPP_INFO(this->get_logger(), "dl=%.3f cl=%.3f pid=%.2f dt=%.2f", wheel_vels.front_right, differential_vel.front_right, wheels_cmd[fr_], dt);
 
-    wheels->motor = l_;
-    wheels->speed = wheels_cmd[l_] /= differential_kim.max_motor_speed_;
+    wheels->motor = fl_;
+    wheels->speed = wheels_cmd[fl_] /= differential_kim.max_motor_speed_;
     speed_client_->async_send_request( wheels );
 
-    wheels->motor = r_;
-    wheels->speed = wheels_cmd[r_] /= differential_kim.max_motor_speed_;
+    wheels->motor = fr_;
+    wheels->speed = wheels_cmd[fr_] /= differential_kim.max_motor_speed_;
+    speed_client_->async_send_request( wheels );
+
+    wheels->motor = rl_;
+    wheels->speed = wheels_cmd[rl_] /= differential_kim.max_motor_speed_;
+    speed_client_->async_send_request( wheels );
+
+    wheels->motor = rr_;
+    wheels->speed = wheels_cmd[rr_] /= differential_kim.max_motor_speed_;
     speed_client_->async_send_request( wheels );
     
 }
@@ -116,19 +157,31 @@ void Controller::publish_odometry() {
     Twist2D twist;
 
 
-    differential_vel.left  = differential_kim.WheelSpeed(enc[differential_kim.l_] - previous_encoder[differential_kim.l_], dt);
-    differential_vel.right = differential_kim.WheelSpeed(enc[differential_kim.r_] - previous_encoder[differential_kim.r_], dt);
+    differential_vel.front_left  = differential_kim.WheelSpeed(enc[differential_kim.fl_] - previous_encoder[differential_kim.fl_], dt);
+    differential_vel.front_right = differential_kim.WheelSpeed(enc[differential_kim.fr_] - previous_encoder[differential_kim.fr_], dt);
+    differential_vel.rear_left   = differential_kim.WheelSpeed(enc[differential_kim.rl_] - previous_encoder[differential_kim.rl_], dt);
+    differential_vel.rear_right  = differential_kim.WheelSpeed(enc[differential_kim.rr_] - previous_encoder[differential_kim.rr_], dt);
 
-    twist = differential_kim.forward( differential_vel.left, differential_vel.right);
+
+    twist = differential_kim.forward( (differential_vel.front_left  + differential_vel.rear_left ) / 2.0, 
+                                      (differential_vel.front_right + differential_vel.rear_right) / 2.0);
     
 
-    robot_twist.linear.x = twist.vx;
-    robot_twist.linear.y = twist.vy;
+    robot_twist.linear.x  = twist.vx;
+    robot_twist.linear.y  = twist.vy;
     robot_twist.angular.z = twist.omega;
 
     twist_pub_->publish( robot_twist );
 
-    // RCLCPP_INFO(this->get_logger(), "cvx=%.3f cvy=%.3f cvth=%.2f dt=%.2f", twist.vx, twist.vy, twist.omega, dt);
+    // RCLCPP_INFO(this->get_logger(), "vx=%.2f vy=%.2f vth=%.2f", twist.vx, twist.vy, twist.omega);
+    // RCLCPP_INFO(this->get_logger(), "fl=%.2f fr=%.2f rl=%.2f rr=%.2f", 
+    //     differential_vel.front_left,
+    //     differential_vel.front_right,
+    //     differential_vel.rear_left,
+    //     differential_vel.rear_right
+    // );
+
+
 
     for (int i=0; i<4; i++) { previous_encoder[i] = enc[i]; }
 

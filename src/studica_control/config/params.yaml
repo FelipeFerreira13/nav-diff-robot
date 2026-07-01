@@ -81,7 +81,7 @@ control_server:
       publish_tf: false
 
     dio:
-      enabled: true
+      enabled: false
       sensors: ["limit_high", "limit_low", "stop", "start"]
       limit_high:
         pin: 8
@@ -121,7 +121,7 @@ control_server:
         topic: "rl_enc"
 
     gamepad:
-      enabled: true
+      enabled: false
       name: "gamepad_controller"
       cmd_vel_topic: "/cmd_vel"
       linear_scale: 0.7
@@ -160,7 +160,7 @@ control_server:
       topic: "odom"
 
     servo:
-      enabled: true
+      enabled: false
       sensors: ["servo_gripper", "servo_base", "servo_arm", "servo_elbow", "servo_wrist", "servo_elevator"]
       servo_gripper:
         port: 16
@@ -188,7 +188,7 @@ control_server:
         topic: "/servo/elevator"
 
     sharp:
-      enabled: true
+      enabled: false
       sensors: ["sharp_right", "sharp_left", "sharp_arm"]
       sharp_right:
         port: 22
@@ -200,13 +200,36 @@ control_server:
         port: 24
         topic: "robot/sensor/sharp/arm/raw"
 
+    # titan:
+    #   enabled: true
+    #   sensors: ["titan"]
+    #   titan:
+    #     can_id: 42
+    #     motor_freq: 15600
+    #     topic: "titan_encoders"
+
     titan:
       enabled: true
-      sensors: ["titan"]
-      titan:
-        can_id: 42
-        motor_freq: 15600
-        topic: "titan_encoders"
+      sensors: ["titan0"]
+      titan0:
+        can_id: 42              # CAN bus ID of the Titan controller
+        motor_freq: 15600       # PWM frequency in Hz
+        encoder_rate_hz: 20      # encoder/rpm publish rate (default 20 Hz)
+        motor_update_rate_hz: 50 # how often motor speeds are sent to hardware, in Hz (default 50)
+        limit_switches: false    # true = publish /m_N/limit_fwd and /m_N/limit_rev (std_msgs/Bool)
+        enable_freshness: false  # true = skip publish on stale CAN frames (encoder, RPM, cypher max, limit switches); warn after 5 consecutive stale reads
+        m_0:
+          encoder_mode: "quadrature"   # "quadrature" or "absolute"
+          dist_per_tick: 0.0006830601  # metres per encoder tick (1.0 = raw counts)
+        m_1:
+          encoder_mode: "quadrature"
+          dist_per_tick: 0.0006830601
+        m_2:
+          encoder_mode: "quadrature"     # Cypher encoder -> publishes /titan0/m_2/angle
+          dist_per_tick: 0.0006830601
+        m_3:
+          encoder_mode: "quadrature"
+          dist_per_tick: 0.0006830601
 
     ultrasonic:
       enabled: false
